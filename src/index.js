@@ -1,5 +1,6 @@
 const exec = require("child_process").exec
 const log = console.debug
+const parse = require("csv-parse").parse
 
 /**
  * @param input - URL, local image path or Buffer
@@ -19,7 +20,16 @@ function recognize(input, config = {}) {
     const child = exec(command, (error, stdout, stderr) => {
       if (config.debug) log(stderr)
       if (error) reject(error)
-      resolve(stdout)
+      if (config.tsv) {
+        parse(stdout, {
+          delimiter: '\t'
+        }, (err, data) => {
+          if (err) reject(err)
+          resolve(data)
+        })
+      } else {
+        resolve(stdout)
+      }
     })
     if (inputOption === "stdin") pipeInput(input, child)
   })
@@ -46,6 +56,7 @@ function getOptions(config) {
       if (["debug", "presets", "binary"].includes(key)) return
       if (key === "lang") return `-l ${value}`
       if (ocrOptions.includes(key)) return `--${key} ${value}`
+      if (key === "tsv") return "tsv"
 
       return `-c ${key}=${value}`
     })
