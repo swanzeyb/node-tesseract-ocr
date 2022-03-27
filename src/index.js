@@ -1,6 +1,7 @@
 const exec = require("child_process").exec
 const log = console.debug
 const parse = require("csv-parse").parse
+// const fs = require("fs")
 
 /**
  * @param input - URL, local image path or Buffer
@@ -20,12 +21,19 @@ function recognize(input, config = {}) {
     const child = exec(command, (error, stdout, stderr) => {
       if (config.debug) log(stderr)
       if (error) reject(error)
+
+      const tsvOpts = {
+        delimiter: "\t",
+        quote: "",
+      }
       if (config.tsv) {
-        parse(stdout, {
-          delimiter: '\t'
-        }, (err, data) => {
-          if (err) reject(err)
-          resolve(data)
+        parse(stdout, tsvOpts, (err, data) => {
+          if (err) {
+            // fs.writeFileSync("tsvdump.tsv", stdout)
+            reject(err)
+          } else {
+            resolve(data)
+          }
         })
       } else {
         resolve(stdout)
